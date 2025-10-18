@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitcoin Portfolio Tracker</title>
+  <style>
+    body {
+      background-color: #0b0e11;
+      color: #f1f1f1;
+      font-family: "Inter", sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #14171a;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #222;
+    }
+    h1 {
+      font-size: 1.8em;
+      margin: 0;
+      color: #f7931a;
+    }
+    .portfolio {
+      font-size: 1.2em;
+      margin-top: 8px;
+      color: #00ffb0;
+    }
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 40px;
+    }
+    .price-box {
+      font-size: 1.5em;
+      background: #14171a;
+      padding: 15px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #f7931a33;
+      text-align: center;
+    }
+    .trades {
+      margin-top: 40px;
+      width: 90%;
+      max-width: 500px;
+      background: #14171a;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px #f7931a22;
+    }
+    .trade {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+      font-size: 0.95em;
+    }
+    .buy { color: #00ffb0; }
+    .sell { color: #ff5c5c; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bitcoin Portfolio Tracker</h1>
+    <div class="portfolio">Portfolio Value: $250,000 USD</div>
+  </header>
+
+  <div class="content">
+    <div class="price-box">
+      <div>Live Bitcoin Price: <span id="btcPrice">Loading...</span></div>
+    </div>
+
+    <div class="trades" id="tradeList"></div>
+  </div>
+
+  <script>
+    async function getBTCPrice() {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+        const data = await res.json();
+        document.getElementById('btcPrice').innerText = '$' + data.bitcoin.usd.toLocaleString();
+      } catch {
+        document.getElementById('btcPrice').innerText = 'Error loading';
+      }
+    }
+    getBTCPrice();
+    setInterval(getBTCPrice, 15000);
+
+    // Simulated buy/sell feed
+    const tradeList = document.getElementById("tradeList");
+    const types = ["buy", "sell"];
+    function randomTrade() {
+      const type = types[Math.floor(Math.random() * types.length)];
+      const amount = (Math.random() * 5 + 0.1).toFixed(3);
+      const price = (Math.random() * 2000 + 65000).toFixed(2);
+      const div = document.createElement("div");
+      div.className = `trade ${type}`;
+      div.textContent = `${type.toUpperCase()} — ${amount} BTC @ $${price}`;
+      tradeList.prepend(div);
+      if (tradeList.childElementCount > 12) tradeList.removeChild(tradeList.lastChild);
+    }
+    setInterval(randomTrade, 3000);
+  </script>
+</body>
+</html>
