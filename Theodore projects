@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitcoin DEX Screener</title>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #0b0f19;
+    color: #e6e6e6;
+    text-align: center;
+    padding: 10px;
+  }
+  h1 {
+    color: #f2a900;
+  }
+  .price {
+    font-size: 2em;
+    margin: 10px 0;
+  }
+  .price-change {
+    font-size: 1em;
+  }
+  .green { color: #00c46b; }
+  .red { color: #ff4d4d; }
+  table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background: #111827;
+    border-radius: 10px;
+  }
+  th, td {
+    padding: 8px;
+    border-bottom: 1px solid #1f2937;
+  }
+  th {
+    background: #1e293b;
+  }
+  .buy { color: #00c46b; }
+  .sell { color: #ff4d4d; }
+  canvas {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 400px;
+  }
+  button {
+    background: #f2a900;
+    border: none;
+    color: #111;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #ffcb3a;
+  }
+  .portfolio {
+    margin: 20px 0;
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 10px;
+    display: inline-block;
+  }
+  .portfolio h2 {
+    color: #f2a900;
+    margin-bottom: 5px;
+  }
+  .portfolio p {
+    font-size: 1.3em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Bitcoin DEX Screener</h1>
+
+<div class="portfolio">
+  <h2>💼 My Portfolio</h2>
+  <p id="portfolioValue">$250,000</p>
+</div>
+
+<div id="price" class="price">Loading...</div>
+<div id="price-change" class="price-change">--</div>
+
+<button onclick="refreshData()">🔄 Refresh</button>
+
+<h2>Recent Trades</h2>
+<table>
+  <thead>
+    <tr><th>Time</th><th>Type</th><th>Amount (USD)</th><th>Trader</th></tr>
+  </thead>
+  <tbody id="trades"></tbody>
+</table>
+
+<h2>Holder Distribution</h2>
+<canvas id="holderChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let portfolioUSD = 70000; // your total holdings in USD
+let btcOwned = 0;
+
+async function getBitcoinPrice() {
+  try {
+    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true");
+    const data = await res.json();
+    const price = data.bitcoin.usd;
+    const change = data.bitcoin.usd_24h_change.toFixed(2);
+
+    // Calculate BTC owned based on your portfolio value
+    if (btcOwned === 0) btcOwned = portfolioUSD / price;
+
+    const newPortfolioValue = (btcOwned * price).toFixed(2);
+    document.getElementById("portfolioValue").textContent = `$${Number(newPortfolioValue).toLocaleString()}`;
+
+    document.getElementById("price").textContent = `$${price.toLocaleString()}`;
+    document.getElementById("price-change").innerHTML =
+      (change >= 0 ? `<span class='green'>+${change}%</span>` : `<span class='red'>${change}%</span>`);
+  } catch {
+    document.getElementById("price").textContent = "Error loading price";
+  }
+}
+
+// Fake trade generator (looks real)
+function generateTrades() {
+  const tradesEl = document.getElementById("trades");
+  tradesEl.innerHTML = "";
+  const now = new Date();
+  for (let i = 0; i < 15; i++) {
+    const type = Math.random() > 0.5 ? "buy" : "sell";
+    const amount = (Math.random() * 20000 + 500).toFixed(2);
+    const time = new Date(now - i * 60000).toLocaleTimeString();
+    const addr = "0x" + Math.random().toString(16).substring(2, 10);
+    tradesEl.innerHTML += `<tr>
+      <td>${time}</td>
+      <td class='${type}'>${type.toUpperCase()}</td>
+      <td>$${amount}</td>
+      <td>${addr}</td>
+    </tr>`;
+  }
+}
+
+// Fake holder distribution
+let chart;
+function updateHolderChart() {
+  const ctx = document.getElementById("holderChart").getContext("2d");
+  const values = [
+    Math.random() * 30 + 20,
+    Math.random() * 25 + 10,
+    Math.random() * 20 + 5,
+    Math.random() * 15 + 3,
+    Math.random() * 10 + 2
+  ];
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['Top 1%', 'Whales', 'Medium', 'Small', 'Tiny'],
+      datasets: [{
+        data: values,
+        backgroundColor: ['#f2a900', '#00c46b', '#3b82f6', '#ff4d4d', '#a855f7']
+      }]
+    },
+    options: { plugins: { legend: { labels: { color: 'white' }}}}
+  });
+}
+
+function refreshData() {
+  getBitcoinPrice();
+  generateTrades();
+  updateHolderChart();
+}
+
+// Auto-refresh every 10 seconds
+setInterval(refreshData, 10000);
+refreshData();
+</script>
+
+</body>
+</html>
