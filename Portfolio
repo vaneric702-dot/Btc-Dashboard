@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Payout Status — Crypto Dashboard</title>
+  <style>
+    :root{
+      --bg: #071029;
+      --card: #0b1220;
+      --muted: #9aa6b2;
+      --accent: #00c2a8;
+      --accent-2: #10b981;
+      --glass: rgba(255,255,255,0.03);
+      --radius:14px;
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      background: linear-gradient(180deg,#031022 0%, #07162a 100%);
+      color: #e8f2f7;
+      padding: 28px;
+      -webkit-font-smoothing:antialiased;
+    }
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:20px;
+      align-items:start;
+    }
+    @media (max-width:900px){
+      .wrap{ grid-template-columns: 1fr; padding-bottom:40px; }
+    }
+
+    /* Header */
+    header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
+    .brand{ display:flex; gap:12px; align-items:center; }
+    .logo{
+      width:56px; height:56px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:#002825; font-weight:800; font-size:18px; box-shadow:0 8px 30px rgba(0,194,168,0.12);
+    }
+    h1{ margin:0; font-size:18px; letter-spacing:0.2px; }
+    p.hint{ margin:0; color:var(--muted); font-size:13px; }
+
+    /* Cards */
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: var(--radius);
+      padding:18px;
+      border:1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 6px 24px rgba(2,6,23,0.5);
+    }
+
+    /* Left column - main */
+    .main-left{ display:flex; flex-direction:column; gap:16px; }
+
+    .balance-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .balance-left{ display:flex; gap:12px; align-items:center; }
+    .coin-blob{
+      width:64px; height:64px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(135deg,#ffd166,#ff8a00);
+      color:#2b1200; font-weight:800; font-size:18px;
+    }
+    .balance-info h2{ margin:0; font-size:20px; }
+    .balance-info p{ margin:4px 0 0 0; color:var(--muted); font-size:13px; }
+
+    .big-amount{ font-size:28px; font-weight:800; margin-top:8px; color: #e6f7f2; }
+
+    /* Right column - details */
+    .right-col{ display:flex; flex-direction:column; gap:16px; }
+
+    /* Progress area */
+    .progress-section { display:flex; flex-direction:column; gap:10px; }
+    .progress-label{ display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:13px; }
+    .progress-bar{
+      background: rgba(255,255,255,0.04);
+      border-radius:999px;
+      height:16px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    .progress-fill{
+      height:100%;
+      width:75%; /* 750/1000 = 75% */
+      background: linear-gradient(90deg,var(--accent),var(--accent-2));
+      border-radius:999px;
+      transition: width 600ms ease;
+    }
+    .tx-summary{ display:flex; gap:12px; flex-wrap:wrap; }
+    .pill{
+      background: rgba(255,255,255,0.02);
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.02);
+      min-width:120px;
+      text-align:center;
+    }
+    .pill strong{ display:block; font-size:16px; color:#effffb; }
+
+    /* Wallet area */
+    .wallet{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+      background: rgba(0,0,0,0.18);
+      padding:12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.03);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .wallet .addr{ white-space:pre-wrap; word-break:break-all; color:#dffcf4; font-size:13px; }
+
+    .actions{ display:flex; gap:8px; }
+    .btn{
+      background: linear-gradient(90deg,var(--accent),var(--accent-2));
+      color:#002825; padding:8px 12px; border-radius:10px; border:none; font-weight:700; cursor:pointer;
+      box-shadow: 0 8px 20px rgba(0,194,168,0.08);
+    }
+    .btn.ghost{
+      background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03);
+      box-shadow:none; font-weight:600;
+    }
+
+    .meta{ color:var(--muted); font-size:13px; margin-top:6px; }
+
+    footer{ margin-top:18px; color:var(--muted); font-size:13px; text-align:center; }
+
+    /* small helper */
+    .success{ color:#8ff3d9; font-weight:700; }
+    .muted{ color:var(--muted); font-size:13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">BTC</div>
+      <div>
+        <h1>Payout Status</h1>
+        <p class="hint">Real-time style summary — scheduled payout information</p>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="muted">Today — Oct 31, 2025</div>
+      <div style="font-weight:700; margin-top:6px; color:var(--accent)">Expected payout: <span class="success">$250,000</span></div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- MAIN LEFT -->
+    <section class="main-left">
+      <div class="card">
+        <div class="balance-row">
+          <div class="balance-left">
+            <div class="coin-blob">₿</div>
+            <div class="balance-info">
+              <h2>Bitcoin Balance</h2>
+              <p class="muted">Available in wallet</p>
+              <div class="big-amount">$250,000</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="muted">Status</div>
+            <div style="font-weight:800; color:#bfffe6; margin-top:6px">Preparing payout</div>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="meta">We are getting the money today to the wallet below. Once remaining funds are released, $250,000 will be sent to the wallet.</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 10px 0">Transaction progress</h3>
+
+        <div class="progress-section">
+          <div class="progress-label">
+            <div>Paid so far</div>
+            <div class="muted">$750 of $1,000 (75%)</div>
+          </div>
+
+          <div class="progress-bar" aria-hidden="true">
+            <div class="progress-fill" id="progressFill" style="width:75%"></div>
+          </div>
+
+          <div class="tx-summary">
+            <div class="pill">
+              <div class="muted">Paid</div>
+              <strong>$750</strong>
+            </div>
+            <div class="pill">
+              <div class="muted">Remaining</div>
+              <strong>$250</strong>
+              <div class="muted" style="margin-top:6px; font-size:12px">Scheduled to pay <strong>Today</strong></div>
+            </div>
+            <div class="pill">
+              <div class="muted">Final Payout</div>
+              <strong>$250,000</strong>
+              <div class="muted" style="margin-top:6px; font-size:12px">Will be sent to wallet below</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="muted">Note: The progress bar reflects $750 paid of the $1,000 transaction. Remaining $250 is awaiting completion and scheduled for payout today.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COL -->
+    <aside class="right-col">
+      <div class="card">
+        <h3 style="margin:0 0 8px 0">Destination Wallet</h3>
+        <div class="wallet" id="walletBox">
+          <div class="addr" id="walletAddr">
+bclqgpw4y4q4vg8p2ndv0phf0tg
+xzc285gyylqatnw
+          </div>
+          <div class="actions">
+            <button class="btn" id="copyBtn">Copy</button>
+            <button class="btn ghost" id="viewBtn">View</button>
+          </div>
+        </div>
+        <div class="meta">This is the wallet the funds will be sent to once the remaining $250 is released.</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px 0">Recent activity</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700">$750</div>
+              <div class="muted">Paid — confirmation received</div>
+            </div>
+            <div class="muted">Tx: #A1B2C3</div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700">$250</div>
+              <div class="muted">Remaining — scheduled Today</div>
+            </div>
+            <div class="muted">Pending</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:8px;">
+          <button class="btn" id="notifyBtn">Mark as Paid</button>
+          <button class="btn ghost" id="downloadBtn">Download Receipt</button>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <div style="font-size:13px; color:var(--muted)">If everything goes through,</div>
+        <div style="font-size:18px; font-weight:800; margin-top:6px; color:#e6f7f2">$250,000 will arrive in the wallet Today.</div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <div>Made for you — Payout status snapshot</div>
+  </footer>
+
+  <script>
+    // copy to clipboard
+    const copyBtn = document.getElementById('copyBtn');
+    const walletAddr = document.getElementById('walletAddr').innerText.trim();
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(walletAddr);
+        copyBtn.textContent = 'Copied';
+        setTimeout(()=> copyBtn.textContent = 'Copy', 1600);
+      } catch (e) {
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = walletAddr;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyBtn.textContent = 'Copied';
+        setTimeout(()=> copyBtn.textContent = 'Copy', 1600);
+      }
+    });
+
+    // view button - opens a simple block explorer search (keeps local, no external call)
+    document.getElementById('viewBtn').addEventListener('click', () => {
+      // show a quick modal-like copy of the wallet (native alert keeps things simple & offline)
+      alert('Wallet address:\\n\\n' + walletAddr);
+    });
+
+    // Mark as Paid - simple UI feedback
+    document.getElementById('notifyBtn').addEventListener('click', () => {
+      const fill = document.getElementById('progressFill');
+      // set to 100% because marking remaining as paid
+      fill.style.width = '100%';
+      document.querySelectorAll('.pill')[1].querySelector('strong').textContent = '$0';
+      document.querySelectorAll('.pill')[0].querySelector('strong').textContent = '$1,000';
+      document.querySelector('.card .muted')?.textContent; // noop to keep layout stable
+      alert('Marked as paid: remaining $250 recorded as paid. Final payout scheduled: $250,000 to wallet.');
+    });
+
+    // Download Receipt (creates a simple text receipt)
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const receipt = [
+        'Payout Receipt',
+        'Date: Today — Oct 31, 2025',
+        '',
+        'Wallet:',
+        walletAddr,
+        '',
+        'Paid: $750',
+        'Remaining: $250 (scheduled Today)',
+        'Expected Payout to Wallet: $250,000',
+        '',
+        'Status: preparing payout'
+      ].join('\\n');
+
+      const blob = new Blob([receipt], {type: 'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'payout-receipt.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
